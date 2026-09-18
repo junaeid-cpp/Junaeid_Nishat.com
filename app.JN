@@ -1,0 +1,113 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Cloudinary Configuration (Cloudinary theke paowa keys)
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload";
+const UPLOAD_PRESET = "YOUR_UNSIGNED_UPLOAD_PRESET";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+
+// Auth Operations
+document.getElementById('signup-btn').onclick = () => {
+  const e = document.getElementById('email').value, p = document.getElementById('password').value;
+  createUserWithEmailAndPassword(auth, e, p).then(() => alert("Registration Successful!")).catch(err => alert(err.message));
+};
+
+document.getElementById('login-btn').onclick = () => {
+  const e = document.getElementById('email').value, p = document.getElementById('password').value;
+  signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+};
+
+document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('dashboard-section').classList.remove('hidden');
+    document.getElementById('user-display').innerText = user.email;
+    loadFeed();
+  } else {
+    document.getElementById('auth-section').classList.remove('hidden');
+    document.getElementById('dashboard-section').classList.add('hidden');
+  }
+});
+
+// Upload Operation
+document.getElementById('upload-btn').onclick = async () => {
+  const fileInput = document.getElementById('file-input');
+  const file = fileInput.files[0];
+  if (!file || !currentUser) return alert('Please select a file!');
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+
+  try {
+    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+    const data = await res.json();
+
+    await addDoc(collection(db, 'posts'), {
+      fileUrl: data.secure_url,
+      fileType: file.type.startsWith('video') ? 'video' : 'image',
+      uploaderId: currentUser.uid,
+      uploaderEmail: currentUser.email,
+      createdAt: serverTimestamp()
+    });
+
+    alert('Upload Successful!');
+    fileInput.value = '';
+    loadFeed();
+  } catch (err) {
+    alert('Upload Failed: ' + err.message);
+  }
+};
+
+// Fetch & Display Feed
+async function loadFeed() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = 'Loading...';
+  const querySnapshot = await getDocs(collection(db, 'posts'));
+  feed.innerHTML = '';
+
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    let media = data.fileType === 'image' 
+      ? `<img src="${data.fileUrl}">` 
+      : `<video src="${data.fileUrl}" controls></video>`;
+
+    let deleteBtn = data.uploaderId === currentUser.uid 
+      ? `<button class="delete-btn" onclick="deletePost('${docSnap.id}')">Delete</button>` 
+      : '';
+
+    card.innerHTML = `<p><strong>Uploaded by:</strong> ${data.uploaderEmail}</p>${media}<br><br>${deleteBtn}`;
+    feed.appendChild(card);
+  });
+}
+
+// Delete Operation
+window.deletePost = async (docId) => {
+  if (confirm("Do you want to delete this file?")) {
+    await deleteDoc(doc(db, 'posts', docId));
+    alert('Deleted Successfully!');
+    loadFeed();
+  }
+};
