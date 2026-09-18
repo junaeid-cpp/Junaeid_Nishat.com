@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Junaeid Islam - C++ Portfolio</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eceff1; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        #message { margin-top: 15px; font-weight: bold; }
+        .code-box { display: none; text-align: left; background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; max-height: 250px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="login-card" id="loginBox">
+    <h2>User Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="message"></p>
+</div>
+
+<div class="login-card" id="portfolioBox" style="display:none; width: 80%; max-width: 600px;">
+    <h2>Welcome Junaeid!</h2>
+    <p>Here is your private C++ Code Collection:</p>
+    <div class="code-box" id="code1" style="display:block;">
+<pre><code>#include &lt;iostream&gt;
+using namespace std;
+
+class Car {
+private:
+    string brand;
+    float price;
+public:
+    void input() {
+        cout << "Enter brand: ";
+        cin >> brand;
+    }
+};</code></pre>
+    </div>
+</div>
+
+<script>
+    function login() {
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        const msg = document.getElementById('message');
+
+        if (user === "junaeid" && pass === "12345") {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('portfolioBox').style.display = 'block';
+        } else {
+            msg.style.color = "red";
+            msg.innerText = "Invalid Username or Password!";
+        }
+    }
+</script>
+
+</body>
+</html>
